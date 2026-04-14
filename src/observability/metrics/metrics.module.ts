@@ -1,0 +1,49 @@
+import { Global, Module } from '@nestjs/common';
+
+import {
+  makeCounterProvider,
+  makeHistogramProvider,
+  PrometheusModule,
+} from '@willsoto/nestjs-prometheus';
+
+@Global()
+@Module({
+  imports: [
+    PrometheusModule.register({
+      path: '/metrics',
+      defaultMetrics: {
+        enabled: true,
+      },
+    }),
+  ],
+  providers: [
+    makeHistogramProvider({
+      name: 'rmq_event_processing_duration_seconds',
+      help: 'RabbitMQ event processing duration in seconds',
+      labelNames: ['service', 'event'],
+      buckets: [0.05, 0.1, 0.2, 0.5, 1, 2, 5],
+    }),
+    makeCounterProvider({
+      name: 'rmq_events_total',
+      help: 'Total RabbitMQ events',
+      labelNames: ['service', 'event', 'status'],
+    }),
+    makeCounterProvider({
+      name: 'rmq_events_ack_total',
+      help: 'Total ACKed RMQ events',
+      labelNames: ['service', 'event'],
+    }),
+    makeCounterProvider({
+      name: 'rmq_events_nack_total',
+      help: 'Total NACKed RMQ events',
+      labelNames: ['service', 'event'],
+    }),
+  ],
+  exports: [
+    'PROM_METRIC_RMQ_EVENT_PROCESSING_DURATION_SECONDS',
+    'PROM_METRIC_RMQ_EVENTS_TOTAL',
+    'PROM_METRIC_RMQ_EVENTS_ACK_TOTAL',
+    'PROM_METRIC_RMQ_EVENTS_NACK_TOTAL',
+  ],
+})
+export class MetricsModule {}
